@@ -1,3 +1,6 @@
+import contextlib
+import io
+import sys
 from unittest.mock import MagicMock, call
 
 from indigo.systems.system import System as System
@@ -70,9 +73,14 @@ def test_exit(system: System, monkeypatch):
     system._on = True
     unlink = MagicMock()
     monkeypatch.setattr(Linker, "unlink", unlink)
+    stream = io.StringIO()
 
     # When
-    system._handle_ask("exit")
+    with (
+        contextlib.redirect_stdout(stream),
+        contextlib.redirect_stderr(stream),
+    ):
+        system._handle_ask("exit")
 
     # Then
     assert not system._on
@@ -81,13 +89,16 @@ def test_exit(system: System, monkeypatch):
 
 def test_farewell(system: System, monkeypatch):
     # Given
-    import sys
-
     exit_mock = MagicMock()
     monkeypatch.setattr(sys, "exit", exit_mock)
+    stream = io.StringIO()
 
     # When
-    system._handle_ask("farewell")
+    with (
+        contextlib.redirect_stdout(stream),
+        contextlib.redirect_stderr(stream),
+    ):
+        system._handle_ask("farewell")
 
     # Then
     exit_mock.assert_called_once_with(0)

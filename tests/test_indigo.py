@@ -1,19 +1,21 @@
+import contextlib
+import io
 import typing as t
 from argparse import Namespace
 from unittest.mock import MagicMock
 
 import pytest
 
-from indigo import Indigo, make_parser, start_system
+from start import Indigo, make_parser, start_system
 
 
 def test_start_system(monkeypatch):
     # Given
     indigo = MagicMock()
-    monkeypatch.setattr("indigo.Indigo", lambda: indigo)
+    monkeypatch.setattr("start.Indigo", lambda: indigo)
 
     config = MagicMock()
-    monkeypatch.setattr("indigo.Config", config)
+    monkeypatch.setattr("start.Config", config)
     namespace = Namespace(**{"debug": False, "system": None})
 
     # When
@@ -65,11 +67,16 @@ def test_parser(
 def test_parser_failure(arguments: t.Sequence[str]):
     # Given
     parser = make_parser()
+    stream = io.StringIO()
 
     # Then
-    with pytest.raises(SystemExit):
-        # When
-        parser.parse_args(arguments)
+    with (
+        contextlib.redirect_stdout(stream),
+        contextlib.redirect_stderr(stream),
+    ):
+        with pytest.raises(SystemExit):
+            # When
+            parser.parse_args(arguments)
 
 
 @pytest.fixture
@@ -83,7 +90,7 @@ def test_start_systems(
 ):
     # Given
     will_system = MagicMock()
-    monkeypatch.setattr(f"indigo.{system}", lambda: will_system)
+    monkeypatch.setattr(f"start.{system}", lambda: will_system)
 
     # When
     indigo._handle_ask(command)

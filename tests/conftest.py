@@ -6,18 +6,22 @@ from unittest.mock import MagicMock
 import freezegun
 import pytest
 
+from indigo.base import Field
 from indigo.config import Config
 from indigo.database.database import Database
-from indigo.database.models import DatabaseRecord
+from indigo.database.models import (
+    DatabaseRecord,
+    DeterministicDatabaseRecord,
+)
 from indigo.database.mongodb import make_client
-from indigo.models.base import Field
 from indigo.systems.system import System
 from indigo.tools.linker import Linker
+from indigo.tools.typer import Typer
 from indigo.utils import date_utils
 
 
 @pytest.fixture(autouse=True)
-def config(tmp_path: Path, monkeypatch):
+def config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     data_directory = tmp_path / ".indigo.debug"
     monkeypatch.setenv("INDIGO_DEBUG_DIRECTORY", data_directory.as_posix())
     monkeypatch.setenv("INDIGO_DATABASE_USERNAME", "mongodb")
@@ -36,7 +40,7 @@ def make_directories():
 
 
 @pytest.fixture(autouse=True)
-def patch_database(monkeypatch):
+def patch_database(monkeypatch: pytest.MonkeyPatch):
     mongo_client = make_client()
     test_database_name = "TestSystemDatabase"
     real_init = Database.__init__
@@ -97,10 +101,15 @@ def disable_linker():
 
 
 @pytest.fixture
-def typer_mock(monkeypatch):
+def typer_mock(monkeypatch: pytest.MonkeyPatch):
     mock = MagicMock()
     monkeypatch.setattr("indigo.systems.system.Typer", mock)
     return mock
+
+
+@pytest.fixture(autouse=True, scope="session")
+def typer_clear_patch():
+    Typer.clear = lambda: None
 
 
 class FileMock:
@@ -134,3 +143,13 @@ def test_file(tmp_path: Path) -> FileMock:
 def frozen_time():
     with freezegun.freeze_time("2022-11-13") as frozen_time:
         yield frozen_time
+
+
+@pytest.fixture(autouse=True, scope="session")
+def freezegun_datetime_patch():
+    DeterministicDatabaseRecord._ALLOWED_DETERMINANT_FIELD_TYPES.extend(
+        [
+            freezegun.api.FakeDatetime,
+            t.Optional[freezegun.api.FakeDatetime],
+        ]
+    )

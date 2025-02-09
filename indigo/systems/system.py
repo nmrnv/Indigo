@@ -6,10 +6,10 @@ import sys
 import typing as t
 from abc import ABC, abstractmethod
 
+from indigo.base import ID, Error
 from indigo.config import Config
 from indigo.database.database import Database
 from indigo.database.models import DatabaseRecord
-from indigo.models.base import ID, Error
 from indigo.systems.models import Argument, Ask, AskDefinition
 from indigo.tools.linker import Linker, LinkerError
 from indigo.tools.typer import Typer

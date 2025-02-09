@@ -1,22 +1,20 @@
-import functools
 import os
 import typing as t
-from copy import copy
 from dataclasses import dataclass
 from pathlib import Path
 
+from librum.files import File, FileError
+from librum.sections import SectionError
+
+from indigo.base import Error
 from indigo.config import Config
-from indigo.models.base import Error
-from indigo.models.files import File, FileError
-from indigo.models.sections import SectionError
-from indigo.systems.purpose.file_validators import *
-from indigo.systems.purpose.files import (
-    EssayFile,
-    RecordedFile,
-    StudyFile,
-    ThoughtsFile,
+from indigo.systems.purpose import directory_validators
+from indigo.systems.purpose.directory_validators import (
+    DIRECTORY_VALIDATORS,
+    DirectoryValidators,
 )
-from indigo.systems.purpose.models import FileRecord
+from indigo.systems.purpose.files import RecordedFile
+from indigo.systems.purpose.models import Directory, FileRecord
 
 
 @dataclass
@@ -28,113 +26,16 @@ class FileCollectorResult:
 class FileCollectorError(Error): ...
 
 
-class DirectoryValidators:
-    validators: t.Sequence[t.Callable]
-    subdirectory_validators: t.Sequence[t.Callable]
-
-    def __init__(
-        self,
-        validators: t.Sequence[t.Callable],
-        subdirectory_validators: t.Sequence[t.Callable] = [],
-        apply_validators_to_subdirectories: bool = False,
-    ):
-        self.validators = [
-            *validators,
-            no_files_validator,
-            non_markdown_files_validator,
-        ]
-        self.subdirectory_validators = [
-            *subdirectory_validators,
-            no_files_validator,
-            non_markdown_files_validator,
-        ]
-        if apply_validators_to_subdirectories:
-            subdirectory_validators_ = list(copy(subdirectory_validators))
-            for validator in validators:
-                if validator not in subdirectory_validators:
-                    subdirectory_validators_.append(validator)
-            self.subdirectory_validators = subdirectory_validators_
-
-
-DIRECTORY_VALIDATORS = {
-    # Purpose
-    "purpose": DirectoryValidators(
-        validators=[root_file_validator],
-        subdirectory_validators=[],
-    ),
-    "purpose/essays": DirectoryValidators(
-        validators=[
-            no_root_file_validator,
-            no_subdirectories_validator,
-            functools.partial(
-                allowed_file_tags_validator,
-                allowed_tags={EssayFile.FILE_TAG},
-            ),
-        ],
-    ),
-    "purpose/essays_bg": DirectoryValidators(
-        validators=[
-            no_root_file_validator,
-            no_subdirectories_validator,
-            functools.partial(
-                allowed_file_tags_validator,
-                allowed_tags={EssayFile.FILE_TAG},
-            ),
-        ],
-    ),
-    # Thoughts and notebooks
-    "thoughts": DirectoryValidators(
-        validators=[
-            no_root_file_validator,
-            yarly_directory_current_year_validator,
-            yearly_directory_subdirectories_validator,
-            functools.partial(
-                allowed_file_tags_validator,
-                allowed_tags={ThoughtsFile.FILE_TAG},
-            ),
-        ],
-        subdirectory_validators=[
-            no_root_file_validator,
-            no_subdirectories_validator,
-            yearly_directory_parent_year_validator,
-        ],
-    ),
-    # Studies
-    "studies": DirectoryValidators(
-        validators=[
-            root_file_validator,
-            only_root_file_validator,
-        ],
-        subdirectory_validators=[
-            root_file_validator,
-            functools.partial(
-                allowed_file_tags_validator,
-                allowed_tags={StudyFile.FILE_TAG},
-            ),
-        ],
-    ),
-    # Archive
-    "archive": DirectoryValidators(
-        validators=[
-            archive_validator,
-            no_root_file_validator,
-            notes_directory_validator,
-        ],
-        apply_validators_to_subdirectories=True,
-    ),
-}
-
-
 class FileCollector:
     def __init__(self):
         self.router = Config.router
         self.root_directory_validators = DirectoryValidators(
-            validators=[only_root_file_validator],
+            validators=[directory_validators.only_root_file_validator],
         )
         self.default_directory_validators = DirectoryValidators(
             validators=[
-                root_file_validator,
-                notes_directory_validator,
+                directory_validators.root_file_validator,
+                directory_validators.notes_directory_validator,
             ],
             apply_validators_to_subdirectories=True,
         )
@@ -175,7 +76,7 @@ class FileCollector:
                     )
 
             directory = Directory(
-                path=walked_directory,
+                location=walked_directory,
                 subdirectories=[
                     walked_directory / subdirectory
                     for subdirectory in subdirectories

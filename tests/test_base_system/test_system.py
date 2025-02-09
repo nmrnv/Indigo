@@ -1,9 +1,11 @@
+import contextlib
+import io
 import typing as t
 from unittest.mock import MagicMock
 
 import pytest
 
-from indigo.models.base import Model
+from indigo.base import Model
 from indigo.systems.models import Argument, Ask
 from indigo.systems.system import System, SystemError_
 from tests.conftest import DatabaseRecordStub
@@ -50,9 +52,14 @@ def test_start(system: System, typer_mock):
 def test_start_with_init_command(system: System):
     # Given
     system._handle_ask = MagicMock(side_effect=lambda _: system._exit())  # type: ignore
+    stream = io.StringIO()
 
     # When
-    system.start(init_command="exit")
+    with (
+        contextlib.redirect_stdout(stream),
+        contextlib.redirect_stderr(stream),
+    ):
+        system.start(init_command="exit")
 
     # Then
     system._handle_ask.assert_called_once_with("exit")
@@ -358,9 +365,14 @@ def test_handle_ask_from_base_system(system: System):
 def test_handle_ask_end_to_end(system: System):
     # Given
     system._on = True
+    stream = io.StringIO()
 
     # When
-    system._handle_ask("exit")
+    with (
+        contextlib.redirect_stdout(stream),
+        contextlib.redirect_stderr(stream),
+    ):
+        system._handle_ask("exit")
 
     # Then
     assert not system._on

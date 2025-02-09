@@ -4,13 +4,13 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
-from indigo.models.files import File, FileError, SectionDefinition
-from indigo.models.patterns import NEW_LINE, SEPARATOR
-from indigo.models.sections import Section, SectionPriority
+from librum.files import File, FileError, SectionDefinition
+from librum.patterns import NEW_LINE, SEPARATOR
+from librum.sections import Section, SectionPriority
+
 from indigo.systems.purpose.models import (
     FileRecord,
     Note,
-    Paragraph,
     Quote,
     Tag,
     Thought,
@@ -77,12 +77,10 @@ class NoteFile(RecordedFile):
     ]
 
     title: str
-    notes: t.List[Note]
     tags: t.Sequence[Tag]
 
     def __init__(self, path: Path):
         super().__init__(path)
-        self.notes = []
         self.tags = []
 
     def on_match(self, section: Section):
@@ -95,25 +93,6 @@ class NoteFile(RecordedFile):
                 title=self.title,
                 tags=self.tags,
             )
-        elif isinstance(section, NoteSection):
-            if any([tag in self.tags for tag in section.tags]):
-                raise FileError(
-                    "NoteFile: Notes cannot duplicate file tags."
-                )
-            note = Note(
-                title=section.title,
-                text=section.text,
-                tags=[*self.tags, *section.tags],
-                file_id=self.record.id_,
-            )
-            self.notes.append(note)
-
-    def on_complete(self):
-        note_titles = set()
-        for note in self.notes:
-            if note.title in note_titles:
-                raise FileError(f"NoteFile: Duplicate note {note.title!r}.")
-            note_titles.add(note.title)
 
 
 class RootFile(NoteFile):
@@ -250,10 +229,8 @@ class EssayFile(RecordedFile):
     number: int
     tags: t.Sequence[Tag]
     purpose: str
-    notes: t.List[Note]
 
     title: str
-    paragraphs: t.List[Paragraph]
     references: t.Optional[t.List[str]] = None
 
     @classmethod
@@ -297,22 +274,6 @@ class EssayFile(RecordedFile):
                 synopsis=self.purpose,
                 tags=self.tags,
             )
-
-        elif isinstance(section, NoteSection):
-            note = Note(
-                title=section.title,
-                text=section.text,
-                file_id=self.record.id_,
-            )
-            self.notes.append(note)
-
-        elif isinstance(section, ParagraphSection):
-            paragraph = Paragraph(
-                title=section.title,
-                text=section.text,
-                file_id=self.record.id_,
-            )
-            self.paragraphs.append(paragraph)
 
         elif isinstance(section, ReferencesSection):
             self.references = section.references

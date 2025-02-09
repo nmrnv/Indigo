@@ -11,7 +11,6 @@ from tests.test_purpose_system.conftest import (
     make_mock_root_file,
     make_mock_study_file,
     make_mock_thoughts_file,
-    make_mock_words_file,
 )
 
 
@@ -23,20 +22,19 @@ def notes_directory(frozen_time) -> Path:
     today = date_utils.today()
 
     # Fill notes directory
-    router.notes_directory.mkdir()
     make_mock_root_file(router.notes_directory)
 
     # Fill purpose directory
-    router.purpose_directory.mkdir()
+    (router.notes_directory / "purpose").mkdir()
     make_mock_root_file(router.purpose_directory)
     make_mock_note_file(router.purpose_directory, "test_note")
 
     # Fill thoughts directory
-    router.thoughts_directory.mkdir()
+    (router.notes_directory / "thoughts").mkdir()
     make_mock_thoughts_file(router.thoughts_directory, date=today)
 
     # Fill studies directory
-    router.studies_directory.mkdir()
+    (router.notes_directory / "studies").mkdir()
     make_mock_root_file(router.studies_directory)
     (router.studies_directory / "philosophy").mkdir()
     make_mock_root_file(router.studies_directory / "philosophy")
@@ -58,9 +56,6 @@ def notes_directory(frozen_time) -> Path:
     languages_directory = router.studies_directory / "languages"
     make_mock_root_file(languages_directory)
     make_mock_root_file(languages_directory / "english")
-    make_mock_words_file(
-        languages_directory / "english" / "words", date=today
-    )
 
     return router.notes_directory
 
@@ -73,12 +68,12 @@ def collector() -> FileCollector:
 def test_file_collector_relative_path(collector: FileCollector):
     # When
     philosophy_directory = (
-        collector.router.studies_directory / "philosophy" / "test.md"
+        collector.router.notes_directory / "directory" / "note.md"
     )
 
     # Then
     assert collector.relative_to_root(philosophy_directory) == Path(
-        "studies/philosophy/test.md"
+        "directory/note.md"
     )
 
 

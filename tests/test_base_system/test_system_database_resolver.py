@@ -2,7 +2,7 @@ import typing as t
 
 import pytest
 
-from indigo.models.base import ID
+from indigo.base import ID
 from indigo.systems.system import System, SystemError_
 from indigo.tools.linker import Linker
 from tests.conftest import DatabaseRecordStub

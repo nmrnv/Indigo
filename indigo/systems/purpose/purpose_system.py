@@ -1,10 +1,11 @@
 import typing as t
 from pathlib import Path
 
+from librum.files import File, FileError
+from librum.sections import SectionError
+
+from indigo.base import ID
 from indigo.config import Config
-from indigo.models.base import ID
-from indigo.models.files import File, FileError
-from indigo.models.sections import SectionError
 from indigo.systems.purpose.file_collector import FileCollector
 from indigo.systems.purpose.files import EssayFile, RecordedFile
 from indigo.systems.purpose.models import FileRecord

@@ -61,12 +61,12 @@ def test_get_directory_existing(tmp_path: Path):
     # Given
     directory_path = tmp_path / "directory"
     directory_path.mkdir()
-    file_path = directory_path / "file"
-    file_path.touch()
+    filepath = directory_path / "file"
+    filepath.touch()
 
     # Then
     assert get_directory(directory_path) == directory_path
-    assert file_path.exists()
+    assert filepath.exists()
 
 
 def test_get_directory_not_existing_created(tmp_path: Path):
@@ -75,22 +75,8 @@ def test_get_directory_not_existing_created(tmp_path: Path):
     assert not directory_path.exists()
 
     # Then
-    assert get_directory(directory_path, create=True) == directory_path
+    assert get_directory(directory_path) == directory_path
     assert directory_path.is_dir()
-
-
-def test_get_directory_not_existing_raises(tmp_path: Path):
-    # Given
-    directory_path = tmp_path / "directory"
-    assert not directory_path.exists()
-
-    # Then
-    with pytest.raises(
-        ConfigError,
-        match=f"ConfigError: {directory_path.as_posix()!r} does not exist",
-    ):
-        # When
-        get_directory(directory_path)
 
 
 def test_get_directory_non_directory(tmp_path: Path):

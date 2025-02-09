@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 from freezegun import freeze_time
+from librum.files import FileError
+from librum.patterns import SEPARATOR
 
-from indigo.models.files import FileError
-from indigo.models.patterns import SEPARATOR
 from indigo.systems.purpose.files import (
     DiaryFile,
     EssayFile,
@@ -13,9 +13,7 @@ from indigo.systems.purpose.files import (
     RootFile,
     StudyFile,
     ThoughtsFile,
-    WordsFile,
 )
-from indigo.systems.purpose.models import Language, NoteRank, PartOfSpeech
 from indigo.utils import date_utils
 from tests.conftest import FileMock
 
@@ -43,7 +41,6 @@ def test_note_file(test_file: FileMock):
 
     # Then
     assert file.title == "Note"
-    assert file.synopsis == "Note synopsis"
     assert file.tags == ["philosophy"]
 
     assert len(file.notes) == 2
@@ -63,7 +60,6 @@ def test_note_file(test_file: FileMock):
     assert record.file_tag == "note_file"
     assert record.path == test_file.path
     assert record.title == "Note"
-    assert record.synopsis == "Note synopsis"
     assert record.tags == ["philosophy"]
     assert isinstance(record.created_at, datetime)
     assert isinstance(record.updated_at, datetime)
@@ -84,10 +80,8 @@ def test_note_file_minimal(test_file: FileMock):
     file.parse()
 
     # Then
-    assert not file.synopsis
     assert len(file.notes) == 1
     assert not file.notes[0].tags
-    assert not file.record.synopsis
 
 
 def test_root_file(test_file: FileMock):
@@ -109,14 +103,12 @@ def test_root_file(test_file: FileMock):
 
     # Then
     assert file.title == "Test file"
-    assert file.synopsis == "Root file synopsis"
     assert file.tags == ["philosophy"]
 
     record = file.record
     assert record.file_tag == "root_file"
     assert record.path == test_file.path
     assert record.title == "Test file"
-    assert record.synopsis == "Root file synopsis"
     assert record.tags == ["philosophy"]
     assert isinstance(record.created_at, datetime)
     assert isinstance(record.updated_at, datetime)
@@ -168,7 +160,6 @@ def test_diary_file(tmp_path: Path):
     assert record.file_tag == "diary_file"
     assert record.path == file.path
     assert record.title == "2022.01 Diary"
-    assert not record.synopsis
     assert record.tags == []
     assert isinstance(record.created_at, datetime)
     assert isinstance(record.updated_at, datetime)
@@ -309,7 +300,6 @@ def test_thoughts_file(tmp_path: Path):
     record = file.record
     assert record.file_tag == "thoughts_file"
     assert record.path == file.path
-    assert not record.synopsis
     assert not record.tags
     assert isinstance(record.created_at, datetime)
     assert isinstance(record.updated_at, datetime)
@@ -362,121 +352,6 @@ def test_thoughts_file_with_duplicate_thoughts(tmp_path: Path):
         match="ThoughtsFile: Cannot have duplicate thoughts.",
     ):
         # When
-        file.parse()
-
-
-@freeze_time("01/01/2022")
-def test_words_file_create(tmp_path: Path):
-    # Given
-    date_ = date_utils.today()
-    language = Language.ENGLISH
-    path = tmp_path / f"{date_utils.month_str(date_)}_Words.md"
-
-    # When
-    WordsFile.create(path, date_, language)
-    file = WordsFile(path)
-    file.parse()
-
-    # Then
-    assert file.path == path
-    assert file.language == language
-    assert file.date_ == date_
-    assert not file.words
-
-
-@freeze_time("01/01/2022")
-def test_words_file(tmp_path: Path):
-    # Given
-    file = FileMock(tmp_path / "2022.01_Words.md")
-    file.write(
-        "## 2022.01 Words",
-        "`[word_file][english]`",
-        SEPARATOR,
-        "# Word",
-        "`[verb][1][tag]`",
-        "Forms: wordy[adjective]",
-        "Synonyms: first",
-        "Antonyms: one, two",
-        "1. First meaning of the word",
-        "  - Example of the first meaning",
-        "2. Second meaning of the word",
-        "  - Example of the second meaning",
-        SEPARATOR,
-        "# Some phrase",
-        "`[phrase][2]`",
-        "1. Meaning of the phrase",
-        "  - Example of the phrase",
-    )
-
-    # When
-    file = WordsFile(file.path)
-    file.parse()
-
-    # Then
-    assert file.date_ == date_utils.today()
-    assert file.language == Language.ENGLISH
-    assert len(file.words) == 2
-
-    word_1 = file.words[0]
-    assert word_1.definition == "Word"
-    assert word_1.part_of_speech == PartOfSpeech.VERB
-    assert word_1.language == Language.ENGLISH
-    assert word_1.definitions == {
-        "First meaning of the word": ["Example of the first meaning"],
-        "Second meaning of the word": ["Example of the second meaning"],
-    }
-    assert word_1.forms == {"wordy": PartOfSpeech.ADJECTIVE}
-    assert word_1.synonyms == ["first"]
-    assert word_1.antonyms == ["one", "two"]
-    assert word_1.tags == ["tag"]
-    assert word_1.rating == 1
-
-    word_2 = file.words[1]
-    assert word_2.definition == "Some phrase"
-    assert word_2.part_of_speech == PartOfSpeech.PHRASE
-    assert word_2.language == Language.ENGLISH
-    assert word_2.definitions == {
-        "Meaning of the phrase": ["Example of the phrase"]
-    }
-    assert not word_2.forms
-    assert not word_2.synonyms
-    assert not word_2.antonyms
-    assert not word_2.tags
-    assert word_2.rating == 2
-
-    record = file.record
-    assert record.file_tag == "words_file"
-    assert record.path == file.path
-    assert record.title == "2022.01 Words"
-    assert not record.synopsis
-    assert not record.tags
-    assert isinstance(record.created_at, datetime)
-    assert isinstance(record.updated_at, datetime)
-
-
-@freeze_time("01/01/2022")
-def test_words_file_invalid_filename(tmp_path: Path):
-    # Given
-    file = FileMock(tmp_path / "2022.01_Words.md")
-    file.write(
-        "## 2022.02 Words",
-        "`[word_file][english]`",
-        SEPARATOR,
-        "# Some phrase",
-        "`[phrase][2]`",
-        "1. Meaning of the phrase",
-        "  - Example of the phrase",
-    )
-    file = WordsFile(file.path)
-
-    # Then
-    with pytest.raises(
-        FileError,
-        match=(
-            "DatedRecordedFile: Filename '2022.01_Words.md' "
-            "does not match the header-derived '2022.02_Words.md'."
-        ),
-    ):
         file.parse()
 
 
@@ -554,7 +429,6 @@ def test_essay_file(tmp_path: Path):
     assert record.file_tag == "essay_file"
     assert record.path == test_file.path
     assert record.title == "Essay"
-    assert record.synopsis == "The purpose of this essay\nin two lines"
     assert record.tags == ["philosophy"]
     assert isinstance(record.created_at, datetime)
     assert isinstance(record.updated_at, datetime)
@@ -611,24 +485,19 @@ def test_study_file(test_file: FileMock):
     # Then
     assert file.title == "Study file"
     assert file.tags == ["root_tag"]
-    assert file.synopsis == "Synopsis text"
 
     assert len(file.notes) == 5
 
     note_one = file.notes[0]
     assert note_one.title == "Side note"
     assert note_one.text == "Note without tags"
-    assert note_one.rank == NoteRank.UNRANKED
     assert note_one.tags == ["root_tag"]
-    assert not note_one.is_question
     assert note_one.file_id == file.record.id_
 
     note_two = file.notes[1]
     assert note_two.title == "Primary note"
     assert note_two.text == "Primary note text"
     assert note_two.tags == ["root_tag", "primary_note_tag"]
-    assert note_two.rank == NoteRank.PRIMARY
-    assert not note_two.is_question
     assert note_two.file_id == file.record.id_
 
     note_three = file.notes[2]
@@ -639,16 +508,12 @@ def test_study_file(test_file: FileMock):
         "Some extra text"
     )
     assert note_three.tags == ["root_tag", "primary_question_tag"]
-    assert note_three.rank == NoteRank.PRIMARY
-    assert note_three.is_question
     assert note_three.file_id == file.record.id_
 
     note_four = file.notes[3]
     assert note_four.title == "Secondary question?"
     assert note_four.text == "Secondary question text"
     assert note_four.tags == ["root_tag", "secondary_question_tag"]
-    assert note_four.rank == NoteRank.SECONDARY
-    assert note_four.is_question
     assert note_four.file_id == file.record.id_
 
     assert len(file.quotes) == 1
@@ -663,7 +528,6 @@ def test_study_file(test_file: FileMock):
     assert record.file_tag == "study_file"
     assert record.path == test_file.path
     assert record.title == "Study file"
-    assert record.synopsis == "Synopsis text"
     assert record.tags == ["root_tag"]
     assert isinstance(record.created_at, datetime)
     assert isinstance(record.updated_at, datetime)

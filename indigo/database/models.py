@@ -4,7 +4,7 @@ from abc import ABC
 from datetime import datetime
 from pathlib import Path
 
-from indigo.models.base import (
+from indigo.base import (
     ID,
     Error,
     Field,
@@ -39,14 +39,21 @@ DatabaseRecord_ = t.TypeVar("DatabaseRecord_", bound=DatabaseRecord)
 
 class DeterministicDatabaseRecord(DatabaseRecord, ABC):
     DETERMINANT_FIELDS: t.ClassVar[t.Sequence[str]]
-    _ALLOWED_FIELD_TYPES: t.ClassVar[t.Tuple[t.Type, ...]] = (
+    _ALLOWED_DETERMINANT_FIELD_TYPES: t.ClassVar[list[t.Type]] = [
+        ID,
         int,
         float,
         str,
         bool,
         datetime,
         Path,
-    )
+        t.Optional[int],
+        t.Optional[float],
+        t.Optional[str],
+        t.Optional[bool],
+        t.Optional[datetime],
+        t.Optional[Path],
+    ]
     # Overriding default behaviour
     id_: ID = Field(
         default=None,  # type: ignore
@@ -57,8 +64,8 @@ class DeterministicDatabaseRecord(DatabaseRecord, ABC):
     def __init_subclass__(cls):
         if not cls.DETERMINANT_FIELDS:
             raise ValueError(
-                "DeterministicDatabaseRecord must define "
-                "at least one determinant field."
+                "DeterministicDatabaseRecord must define at least one"
+                " determinant field."
             )
         for field in cls.DETERMINANT_FIELDS:
             if field not in cls.__annotations__:
@@ -67,8 +74,9 @@ class DeterministicDatabaseRecord(DatabaseRecord, ABC):
                     f" {cls.__name__}."
                 )
             if (
-                field_type := cls.__annotations__[field]
-            ) and not issubclass(field_type, cls._ALLOWED_FIELD_TYPES):
+                cls.__annotations__[field]
+                not in cls._ALLOWED_DETERMINANT_FIELD_TYPES
+            ):
                 raise ValueError(
                     f"Determinant field {field!r}'s type is not allowed for"
                     " a determinant field."
@@ -81,7 +89,7 @@ class DeterministicDatabaseRecord(DatabaseRecord, ABC):
             determinant_values = [cls.__name__]
             for determinant_field in cls.DETERMINANT_FIELDS:
                 value = values.get(
-                    cls.__fields__[determinant_field].alias
+                    cls.model_fields[determinant_field].alias
                     or determinant_field
                 )
                 if not value:
@@ -125,7 +133,7 @@ class Hideable(Model):
 
 
 class MetadataRecord(DatabaseRecord):
-    key: str  # Class attribute
+    key: t.ClassVar[str]
 
     def __init__(self, *args, **kwargs):
         if "_id" not in kwargs:

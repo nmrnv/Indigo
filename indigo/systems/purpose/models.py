@@ -3,11 +3,13 @@ import typing as t
 from datetime import datetime
 from pathlib import Path
 
+from librum.files import File, FileError
+
+from indigo.base import ID, Error
 from indigo.database.models import (
     DeterministicDatabaseRecord,
     Field,
 )
-from indigo.models.base import ID
 from indigo.utils import date_utils
 
 Tag = str
@@ -42,6 +44,51 @@ class FileRecord(DeterministicDatabaseRecord):
         dictionary = super().model_dump(*args, **kwargs)
         dictionary["path"] = self.path.as_posix()
         return dictionary
+
+
+class DirectoryError(Error): ...
+
+
+class Directory:
+    location: Path
+    subdirectories: t.Set[Path]
+    files: t.Set[File]
+    file_records: t.Set[FileRecord]
+    file_tags: t.Set[Tag]
+    errors: t.List[str]
+    is_parsed: bool = False
+
+    def __init__(self, location: Path):
+        self.location = location
+        if not location.is_dir():
+            raise DirectoryError(
+                "Cannot initialise Directory."
+                "Location path is not a directory."
+            )
+
+        self.files = set()
+        self.subdirectories = set()
+        self.file_records = set()
+        self.file_tags = set()
+        self.errors = []
+
+        for path in location.iterdir():
+            if path.is_dir():
+                self.subdirectories.add(path)
+            else:
+                try:
+                    file = File.match(path)
+                except FileError as error:
+                    self.errors.append(str(error))
+                    continue
+                self.files.add(file)
+
+    def parse(self):
+        if self.is_parsed:
+            return
+        for file in self.files:
+            file.parse()
+        self.is_parsed = True
 
 
 class Chapter(DeterministicDatabaseRecord):

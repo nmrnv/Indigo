@@ -1,6 +1,6 @@
 import typing as t
 
-from indigo.models.base import ID, Error
+from indigo.base import ID, Error
 
 
 class LinkerError(Error): ...
@@ -12,7 +12,6 @@ class Linker:
     extra: t.ClassVar[t.Mapping] = {}
 
     @classmethod
-    @property
     def links(cls) -> t.Sequence[ID]:
         if not cls._link:
             return []

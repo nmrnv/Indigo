@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from pathlib import Path
 
-from indigo.models.base import Error
+from indigo.base import Error
 
 __all__ = ["Config"]
 
@@ -31,12 +31,8 @@ class Environment(str, Enum):
 class ConfigError(Error): ...
 
 
-def get_directory(directory: Path, create: bool = False) -> Path:
+def get_directory(directory: Path) -> Path:
     if not directory.exists():
-        if not create:
-            raise ConfigError(
-                f"ConfigError: {directory.as_posix()!r} does not exist."
-            )
         directory.mkdir(parents=True)
     elif not directory.is_dir():
         raise ConfigError(
@@ -54,7 +50,7 @@ class DatabaseConfig:
         self.username = Environment.DATABASE_USERNAME.get_value()
         self.password = Environment.DATABASE_PASSWORD.get_value()
         self.directory = get_directory(
-            Config.router.root_directory / "mongodb", create=True
+            Config.router.root_directory / "mongodb"
         )
 
 
@@ -76,26 +72,20 @@ class Router:
     def root_directory(self) -> Path:
         if not Config.debug:
             return get_directory(
-                Path(Environment.DATA_DIRECTORY.get_value()), create=True
+                Path(Environment.DATA_DIRECTORY.get_value())
             )
         return get_directory(
-            (
-                Path(Environment.DEBUG_DIRECTORY.get_value())
-                if Environment.DEBUG_DIRECTORY.is_provided()
-                else Path(__file__).parent.parent / ".indigo.debug"
-            ),
-            create=True,
+            Path(Environment.DEBUG_DIRECTORY.get_value())
+            if Environment.DEBUG_DIRECTORY.is_provided()
+            else Path(__file__).parent.parent / ".indigo.debug"
         )
 
     @property
     def notes_directory(self) -> Path:
         return get_directory(
-            (
-                Path(Environment.NOTES_DIRECTORY.get_value())
-                if not Config.debug
-                else self.root_directory / "notes"
-            ),
-            create=True,
+            Path(Environment.NOTES_DIRECTORY.get_value())
+            if not Config.debug
+            else self.root_directory / "notes"
         )
 
     @property

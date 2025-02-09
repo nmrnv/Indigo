@@ -39,24 +39,3 @@ class AWSClient:
 
     def exists(self, filename: str) -> bool:
         return any(self.bucket.objects.filter(Prefix=filename))
-
-    def text_to_audio(self, text: str):
-        try:
-            # SSML: Can be used to modify the outcome
-            response = self.polly.synthesize_speech(
-                VoiceId="Joanna",
-                OutputFormat="mp3",
-                TextType="ssml",
-                Text=f"<speak>{text}</speak>",
-                Engine="neural",
-            )
-
-            # client = AWSClient()
-            # response = client.text_to_audio("Hello. Is this unbelievable? Yes, this is unbelievable.")
-            # file = open('speech.mp3', 'wb')
-            # file.write(response['AudioStream'].read())
-            # file.close()
-
-            return response
-        except Boto3Error:
-            ...

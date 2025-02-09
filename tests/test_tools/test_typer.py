@@ -1,4 +1,3 @@
-import subprocess
 from datetime import date
 from unittest.mock import MagicMock, call
 
@@ -434,15 +433,3 @@ class TestConfirm:
             call("  1.Yes  2.No"),
             call("  Invalid index 'invalid'."),
         ]
-
-
-def test_clear(monkeypatch: MonkeyPatch):
-    # Given
-    mock = MagicMock()
-    monkeypatch.setattr(subprocess, "run", mock)
-
-    # When
-    Typer.clear()
-
-    # Then
-    mock.assert_called_once_with(["clear"])

@@ -1,6 +1,6 @@
 import re
 
-from indigo.models.patterns import RE_ROMAN_NUMBER_PATTERN
+from librum.patterns import RE_ROMAN_NUMBER_PATTERN
 
 ROMAN_TO_NUMERIC = {
     "I": 1,

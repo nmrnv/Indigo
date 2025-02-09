@@ -1,6 +1,6 @@
 import pytest
 
-from indigo.models.base import ID
+from indigo.base import ID
 from indigo.tools.linker import Linker, LinkerError
 
 
@@ -15,14 +15,14 @@ def test_linker():
     id_1, id_2 = ID(), ID()
     ids = [id_1, id_2]
     assert not Linker.is_linked()
-    assert Linker.links == []
+    assert Linker.links() == []
 
     # When
     Linker.link(str, ids, extra={"key": "value"})
 
     # Then
     assert Linker.is_linked()
-    assert Linker.links == ids
+    assert Linker.links() == ids
 
     # When
     resolved_id = Linker.resolve(str, "1")

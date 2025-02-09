@@ -1,8 +1,8 @@
 import pytest
 
+from indigo.base import ID
 from indigo.database.database import Database
 from indigo.database.models import DatabaseError, MetadataRecord
-from indigo.models.base import ID
 from tests.conftest import DatabaseRecordStub
 
 

@@ -3,7 +3,7 @@ import re
 import typing as t
 from datetime import datetime
 
-from indigo.models.patterns import (
+from librum.patterns import (
     RE_ANY_TEXT_EXCEPT_NEW_LINE_PATTERN,
     RE_ANY_TEXT_PATTERN,
     RE_DAY_PATTERN,
@@ -19,12 +19,13 @@ from indigo.models.patterns import (
     RE_WEEKDAY_PATTERN,
     RE_YEAR_PATTERN,
 )
-from indigo.models.sections import (
+from librum.sections import (
     Line,
     LineDefinition,
     Section,
     SectionError,
 )
+
 from indigo.systems.purpose.models import Tag
 from indigo.utils import date_utils
 
