@@ -12,7 +12,6 @@ class Linker:
     extra: t.ClassVar[t.Mapping] = {}
 
     @classmethod
-    @property
     def links(cls) -> t.Sequence[ID]:
         if not cls._link:
             return []

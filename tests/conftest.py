@@ -8,11 +8,15 @@ import pytest
 
 from indigo.config import Config
 from indigo.database.database import Database
-from indigo.database.models import DatabaseRecord
+from indigo.database.models import (
+    DatabaseRecord,
+    DeterministicDatabaseRecord,
+)
 from indigo.database.mongodb import make_client
 from indigo.models.base import Field
 from indigo.systems.system import System
 from indigo.tools.linker import Linker
+from indigo.tools.typer import Typer
 from indigo.utils import date_utils
 
 
@@ -103,6 +107,11 @@ def typer_mock(monkeypatch):
     return mock
 
 
+@pytest.fixture(autouse=True, scope="session")
+def typer_clear_patch():
+    Typer.clear = lambda: None
+
+
 class FileMock:
     unique_counter = 26
 
@@ -134,3 +143,13 @@ def test_file(tmp_path: Path) -> FileMock:
 def frozen_time():
     with freezegun.freeze_time("2022-11-13") as frozen_time:
         yield frozen_time
+
+
+@pytest.fixture(autouse=True, scope="session")
+def freezegun_datetime_patch():
+    DeterministicDatabaseRecord._ALLOWED_DETERMINANT_FIELD_TYPES.extend(
+        [
+            freezegun.api.FakeDatetime,
+            t.Optional[freezegun.api.FakeDatetime],
+        ]
+    )

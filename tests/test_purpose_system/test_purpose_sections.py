@@ -14,12 +14,8 @@ from indigo.systems.purpose.sections import (
     ParagraphSection,
     PrimaryIdeasSection,
     PurposeSection,
-    QuestionSection,
     QuoteSection,
     ReferencesSection,
-    RemarksSection,
-    SecondaryIdeasSection,
-    SynopsisSection,
     ThoughtSection,
     ThoughtsHeaderSection,
 )
@@ -73,35 +69,10 @@ def test_header_section_with_invalid_symbols(invalid_title: str):
         HeaderSection(line)
 
 
-def test_synopsis_section():
-    # Given
-    lines = make_lines(
-        "# Synopsis",
-        "First line",
-        "Second line",
-    )
-
-    # When
-    synopsis_section = make_section(SynopsisSection, lines)
-
-    # Then
-    assert synopsis_section.text == "First line\nSecond line"
-    assert not synopsis_section.completed
-
-    # When
-    synopsis_section.on_end()
-
-    # Then
-    assert synopsis_section.text == "First line\nSecond line"
-    assert synopsis_section.completed
-
-
 @pytest.mark.parametrize(
     "cls, title",
     [
         (PrimaryIdeasSection, "Primary Ideas"),
-        (SecondaryIdeasSection, "Secondary Ideas"),
-        (RemarksSection, "Remarks"),
     ],
 )
 def test_study_notes_rank_sections(cls, title: str):
@@ -231,67 +202,6 @@ def test_note_section_failure_with_duplicate_tags():
     with pytest.raises(
         SectionError,
         match="NoteSection: Cannot have duplicate tags.",
-    ):
-        # When
-        section.consume_line(lines[1])
-
-
-def test_question_section():
-    # Given
-    question = "Question: with, al1 – possible: sym-bols?"
-    lines = make_lines(
-        f"# {question}",
-        "Question text",
-        "Further text",
-    )
-
-    # When
-    question_section = make_section(QuestionSection, lines)
-    question_section.on_end()
-
-    # Then
-    assert question_section.completed
-    assert question_section.title == question
-    assert question_section.text == "Question text\nFurther text"
-
-
-@pytest.mark.parametrize(
-    "invalid_question",
-    (
-        "Not ending with question mark.",
-        "Not ending with question mark!",
-        " Starting with space",
-        "starting with lowercase letter",
-        "Containing invalid@symbol",
-        "Containing new \n line",
-        "Containing \t tab",
-    ),
-)
-def test_question_section_with_invalid_symbols(invalid_question: str):
-    # Given
-    line = Line(index=0, text=f"# {invalid_question}?")
-
-    # Then
-    with pytest.raises(
-        SectionError,
-        match="QuestionSection: Invalid line 0:",
-    ):
-        # When
-        QuestionSection(line)
-
-
-def test_question_section_failure_with_duplicate_tags():
-    # Given
-    lines = make_lines(
-        "# Question title?",
-        "`[duplicate][duplicate]`",
-    )
-    section = QuestionSection(starting_line=lines[0])
-
-    # Then
-    with pytest.raises(
-        SectionError,
-        match="QuestionSection: Cannot have duplicate tags.",
     ):
         # When
         section.consume_line(lines[1])

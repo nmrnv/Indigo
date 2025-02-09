@@ -10,7 +10,6 @@ from indigo.systems.purpose.files import (
     RootFile,
     StudyFile,
     ThoughtsFile,
-    WordsFile,
 )
 from indigo.utils import date_utils
 from tests.conftest import FileMock
@@ -129,23 +128,3 @@ def make_mock_study_file(path: Path, name: str) -> StudyFile:
         "Note text",
     )
     return StudyFile.match(file.path)
-
-
-def make_mock_words_file(path: Path, date: datetime) -> WordsFile:
-    date = date_utils.beginning_of_month(date)
-    year, month = (
-        date.year,
-        date.month if len(str(date.month)) == 2 else f"0{date.month}",
-    )
-    name = f"{year}.{month}_Words.md"
-    file = FileMock(path / name)
-    file.write(
-        f"## {year}.{month} Words",
-        f"`[{WordsFile.FILE_TAG}][english]`",
-        SEPARATOR,
-        "# Mock",
-        "`[noun][1]`",
-        "1. A dummy object",
-        "  - Tests use mock objects",
-    )
-    return WordsFile.match(file.path)

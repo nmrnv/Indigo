@@ -11,7 +11,6 @@ from tests.test_purpose_system.conftest import (
     make_mock_root_file,
     make_mock_study_file,
     make_mock_thoughts_file,
-    make_mock_words_file,
 )
 
 
@@ -58,9 +57,6 @@ def notes_directory(frozen_time) -> Path:
     languages_directory = router.studies_directory / "languages"
     make_mock_root_file(languages_directory)
     make_mock_root_file(languages_directory / "english")
-    make_mock_words_file(
-        languages_directory / "english" / "words", date=today
-    )
 
     return router.notes_directory
 

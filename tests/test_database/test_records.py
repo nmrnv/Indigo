@@ -29,7 +29,7 @@ def test_database_record_id_validation_failure(invalid_value):
         DatabaseRecord(_id=invalid_value)
 
     # Then
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         # When
         DatabaseRecord().id_ = invalid_value
 
@@ -162,9 +162,8 @@ def test_deterministic_database_record_no_values():
         TestClass(int_p=None)
 
     # Then
-    assert (
-        str(error.value.raw_errors[0].exc)
-        == "Cannot generate id based only on the class name."
+    assert "Cannot generate id based only on the class name." in str(
+        error.value.errors()[0]["msg"]
     )
 
 
